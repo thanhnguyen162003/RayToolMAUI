@@ -1,0 +1,105 @@
+@page "/dashboard"
+@inject NavigationManager Navigation
+@inject IAuthenticationService AuthService
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-8 mb-8">
+    <MudText Typo="Typo.h3" Align="Align.Center" GutterBottom="true" Class="mb-2">
+        <MudIcon Icon="@Icons.Material.Filled.Dashboard" Size="Size.Large" Class="mr-3" />
+        RayTools Dashboard
+    </MudText>
+    
+    <MudText Typo="Typo.body1" Align="Align.Center" Color="Color.Secondary" Class="mb-8">
+        Select a tool to get started
+    </MudText>
+
+    <MudGrid Spacing="4" Justify="Justify.Center">
+        <MudItem xs="12" sm="6" md="4">
+            <MudCard Elevation="4" Class="tool-card" @onclick="@(() => NavigateToTool(AppConstants.Routes.PortScanner))">
+                <MudCardContent Class="text-center pa-6">
+                    <MudIcon Icon="@Icons.Material.Filled.Scanner" Color="Color.Primary" Size="Size.Large" Class="mb-4" />
+                    <MudText Typo="Typo.h5" GutterBottom="true">Port Scanner</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        Scan ports on any IP address to check which services are running
+                    </MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="4">
+            <MudCard Elevation="4" Class="tool-card" @onclick="@(() => NavigateToTool(AppConstants.Routes.IpLookup))">
+                <MudCardContent Class="text-center pa-6">
+                    <MudIcon Icon="@Icons.Material.Filled.Search" Color="Color.Info" Size="Size.Large" Class="mb-4" />
+                    <MudText Typo="Typo.h5" GutterBottom="true">IP Lookup</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        Get detailed information about any IP address including location and ISP
+                    </MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="4">
+            <MudCard Elevation="4" Class="tool-card" @onclick="@(() => NavigateToTool(AppConstants.Routes.PingTool))">
+                <MudCardContent Class="text-center pa-6">
+                    <MudIcon Icon="@Icons.Material.Filled.NetworkCheck" Color="Color.Success" Size="Size.Large" Class="mb-4" />
+                    <MudText Typo="Typo.h5" GutterBottom="true">Ping Tool</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        Test network connectivity and measure response time to hosts
+                    </MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="4">
+            <MudCard Elevation="4" Class="tool-card" @onclick="@(() => NavigateToTool(AppConstants.Routes.DnsLookup))">
+                <MudCardContent Class="text-center pa-6">
+                    <MudIcon Icon="@Icons.Material.Filled.Dns" Color="Color.Warning" Size="Size.Large" Class="mb-4" />
+                    <MudText Typo="Typo.h5" GutterBottom="true">DNS Lookup</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        Resolve domain names to IP addresses and view DNS records
+                    </MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="4">
+            <MudCard Elevation="4" Class="tool-card" @onclick="@(() => NavigateToTool(AppConstants.Routes.MyPublicIp))">
+                <MudCardContent Class="text-center pa-6">
+                    <MudIcon Icon="@Icons.Material.Filled.Public" Color="Color.Secondary" Size="Size.Large" Class="mb-4" />
+                    <MudText Typo="Typo.h5" GutterBottom="true">My Public IP</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        Discover your current public IP address and location
+                    </MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+<style>
+    .tool-card {
+        cursor: pointer;
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+
+    .tool-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 16px rgba(33, 150, 243, 0.3) !important;
+    }
+</style>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        var isAuthenticated = await AuthService.IsAuthenticatedAsync();
+        if (!isAuthenticated)
+        {
+            Navigation.NavigateTo(AppConstants.Routes.Login, true);
+        }
+    }
+
+    private void NavigateToTool(string route)
+    {
+        Navigation.NavigateTo(route);
+    }
+}

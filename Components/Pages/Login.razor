@@ -1,0 +1,96 @@
+@page "/"
+@inject IAuthenticationService AuthService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="d-flex align-center justify-center" Style="min-height: 100vh;">
+    <MudPaper Elevation="8" Class="pa-8" Style="width: 100%; max-width: 400px;">
+        <MudText Typo="Typo.h4" Align="Align.Center" GutterBottom="true" Class="mb-6">
+            <MudIcon Icon="@Icons.Material.Filled.Security" Size="Size.Large" Class="mr-2" />
+            RayTools
+        </MudText>
+        
+        <MudForm @ref="form" @onsubmit="OnSubmit">
+            <MudTextField @bind-Value="username" 
+                         Label="Username" 
+                         Variant="Variant.Outlined" 
+                         Required="true"
+                         RequiredError="Username is required"
+                         Class="mb-4"
+                         Adornment="Adornment.Start"
+                         AdornmentIcon="@Icons.Material.Filled.Person" />
+            
+            <MudTextField @bind-Value="password" 
+                         Label="Password" 
+                         Variant="Variant.Outlined" 
+                         Required="true"
+                         RequiredError="Password is required"
+                         InputType="InputType.Password"
+                         Class="mb-6"
+                         Adornment="Adornment.Start"
+                         AdornmentIcon="@Icons.Material.Filled.Lock" />
+            
+            <MudButton Variant="Variant.Filled" 
+                      Color="Color.Primary" 
+                      FullWidth="true"
+                      Size="Size.Large"
+                      ButtonType="ButtonType.Submit"
+                      Disabled="isLoading">
+                @if (isLoading)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                    <span>Logging in...</span>
+                }
+                else
+                {
+                    <span>Login</span>
+                }
+            </MudButton>
+        </MudForm>
+        
+        <MudText Typo="Typo.caption" Align="Align.Center" Class="mt-4" Color="Color.Secondary">
+            Enterprise IP Network Tools
+        </MudText>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private MudForm? form;
+    private string username = string.Empty;
+    private string password = string.Empty;
+    private bool isLoading = false;
+
+    private async Task OnSubmit()
+    {
+        if (form == null) return;
+        
+        await form.Validate();
+        
+        if (!form.IsValid) return;
+
+        isLoading = true;
+        
+        try
+        {
+            var success = await AuthService.LoginAsync(username, password);
+            
+            if (success)
+            {
+                Snackbar.Add("Login successful!", Severity.Success);
+                Navigation.NavigateTo(AppConstants.Routes.Dashboard, true);
+            }
+            else
+            {
+                Snackbar.Add("Invalid username or password", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Login error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

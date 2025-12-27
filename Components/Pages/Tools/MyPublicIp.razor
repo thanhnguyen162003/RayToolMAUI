@@ -1,0 +1,99 @@
+@page "/tools/my-public-ip"
+@inject IIpLookupService IpLookup
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-4">
+    <MudBreadcrumbs Items="_breadcrumbs" Class="mb-4"></MudBreadcrumbs>
+    
+    <MudPaper Elevation="4" Class="pa-6 text-center">
+        <MudText Typo="Typo.h4" GutterBottom="true">
+            <MudIcon Icon="@Icons.Material.Filled.Public" Class="mr-2" />
+            My Public IP
+        </MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-6">
+            Discover your current public IP address
+        </MudText>
+
+        @if (isLoading)
+        {
+            <MudProgressCircular Size="Size.Large" Indeterminate="true" Class="my-8" />
+            <MudText Typo="Typo.body1">Fetching your public IP...</MudText>
+        }
+        else if (!string.IsNullOrEmpty(publicIp))
+        {
+            <MudPaper Elevation="2" Class="pa-8 my-6" Style="background: linear-gradient(135deg, #1e88e5 0%, #1565c0 100%);">
+                <MudText Typo="Typo.h3" Color="Color.Surface" GutterBottom="true" Style="font-weight: 600;">
+                    @publicIp
+                </MudText>
+                <MudText Typo="Typo.subtitle1" Color="Color.Surface">
+                    Your Public IP Address
+                </MudText>
+            </MudPaper>
+
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" 
+                      OnClick="RefreshIp" StartIcon="@Icons.Material.Filled.Refresh" Class="mt-4">
+                Refresh
+            </MudButton>
+        }
+        else if (!string.IsNullOrEmpty(error))
+        {
+            <MudAlert Severity="Severity.Error" Class="my-6">@error</MudAlert>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" 
+                      OnClick="LoadPublicIp" StartIcon="@Icons.Material.Filled.Refresh">
+                Try Again
+            </MudButton>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<BreadcrumbItem> _breadcrumbs = new()
+    {
+        new BreadcrumbItem("Dashboard", href: AppConstants.Routes.Dashboard, icon: Icons.Material.Filled.Dashboard),
+        new BreadcrumbItem("My Public IP", href: null, disabled: true, icon: Icons.Material.Filled.Public)
+    };
+
+    private string publicIp = string.Empty;
+    private string error = string.Empty;
+    private bool isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPublicIp();
+    }
+
+    private async Task LoadPublicIp()
+    {
+        isLoading = true;
+        error = string.Empty;
+        publicIp = string.Empty;
+
+        try
+        {
+            publicIp = await IpLookup.GetMyPublicIpAsync();
+            
+            if (publicIp == "Unable to determine")
+            {
+                error = "Could not retrieve public IP address";
+                publicIp = string.Empty;
+            }
+        }
+        catch (Exception ex)
+        {
+            error = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task RefreshIp()
+    {
+        await LoadPublicIp();
+        if (!string.IsNullOrEmpty(publicIp))
+        {
+            Snackbar.Add("IP address refreshed!", Severity.Success);
+        }
+    }
+}

@@ -1,0 +1,150 @@
+@page "/tools/ip-lookup"
+@inject IIpLookupService IpLookupService
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudBreadcrumbs Items="_breadcrumbs" Class="mb-4"></MudBreadcrumbs>
+    
+    <MudPaper Elevation="4" Class="pa-6">
+        <MudText Typo="Typo.h4" GutterBottom="true">
+            <MudIcon Icon="@Icons.Material.Filled.Search" Class="mr-2" />
+            IP Lookup
+        </MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-6">
+            Get detailed geolocation and ISP information for any IP address
+        </MudText>
+
+        <MudGrid>
+            <MudItem xs="12" md="9">
+                <MudTextField @bind-Value="ipAddress" Label="IP Address" Variant="Variant.Outlined" 
+                             HelperText="Enter IP address to lookup" Required="true" />
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" 
+                          OnClick="LookupIp" Disabled="isLooking" FullWidth="true" Size="Size.Large">
+                    @if (isLooking)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                        <span>Looking up...</span>
+                    }
+                    else
+                    {
+                        <span>Lookup</span>
+                    }
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+
+        @if (result != null)
+        {
+            <MudDivider Class="my-6" />
+            
+            @if (result.Success)
+            {
+                <MudGrid Spacing="3">
+                    <MudItem xs="12" md="6">
+                        <MudCard Elevation="2">
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.h6">Location Information</MudText>
+                                </CardHeaderContent>
+                                <CardHeaderAvatar>
+                                    <MudIcon Icon="@Icons.Material.Filled.LocationOn" Color="Color.Info" />
+                                </CardHeaderAvatar>
+                            </MudCardHeader>
+                            <MudCardContent>
+                                <MudList T="string" Dense="true">
+                                    <MudListItem T="string" Icon="@Icons.Material.Filled.Public">
+                                        <MudText><strong>IP Address:</strong> @result.IpAddress</MudText>
+                                    </MudListItem>
+                                    <MudListItem T="string" Icon="@Icons.Material.Filled.LocationCity">
+                                        <MudText><strong>City:</strong> @result.City</MudText>
+                                    </MudListItem>
+                                    <MudListItem T="string" Icon="@Icons.Material.Filled.Map">
+                                        <MudText><strong>Region:</strong> @result.Region</MudText>
+                                    </MudListItem>
+                                    <MudListItem T="string" Icon="@Icons.Material.Filled.Flag">
+                                        <MudText><strong>Country:</strong> @result.Country (@result.CountryCode)</MudText>
+                                    </MudListItem>
+                                    <MudListItem T="string" Icon="@Icons.Material.Filled.Schedule">
+                                        <MudText><strong>Timezone:</strong> @result.Timezone</MudText>
+                                    </MudListItem>
+                                </MudList>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                    
+                    <MudItem xs="12" md="6">
+                        <MudCard Elevation="2">
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.h6">Network Information</MudText>
+                                </CardHeaderContent>
+                                <CardHeaderAvatar>
+                                    <MudIcon Icon="@Icons.Material.Filled.Business" Color="Color.Success" />
+                                </CardHeaderAvatar>
+                            </MudCardHeader>
+                            <MudCardContent>
+                                <MudList T="string" Dense="true">
+                                    <MudListItem T="string" Icon="@Icons.Material.Filled.Dns">
+                                        <MudText><strong>ISP:</strong> @result.Isp</MudText>
+                                    </MudListItem>
+                                    <MudListItem T="string" Icon="@Icons.Material.Filled.CorporateFare">
+                                        <MudText><strong>Organization:</strong> @result.Organization</MudText>
+                                    </MudListItem>
+                                    @if (result.Latitude.HasValue && result.Longitude.HasValue)
+                                    {
+                                        <MudListItem T="string" Icon="@Icons.Material.Filled.MyLocation">
+                                            <MudText><strong>Coordinates:</strong> @result.Latitude.Value.ToString("F4"), @result.Longitude.Value.ToString("F4")</MudText>
+                                        </MudListItem>
+                                    }
+                                </MudList>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                </MudGrid>
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Error">Error: @result.ErrorMessage</MudAlert>
+            }
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<BreadcrumbItem> _breadcrumbs = new()
+    {
+        new BreadcrumbItem("Dashboard", href: AppConstants.Routes.Dashboard, icon: Icons.Material.Filled.Dashboard),
+        new BreadcrumbItem("IP Lookup", href: null, disabled: true, icon: Icons.Material.Filled.Search)
+    };
+
+    private string ipAddress = "";
+    private bool isLooking = false;
+    private IpLookupResult? result;
+
+    private async Task LookupIp()
+    {
+        if (string.IsNullOrWhiteSpace(ipAddress) || !ipAddress.IsValidIpAddress())
+        {
+            Snackbar.Add("Please enter a valid IP address", Severity.Warning);
+            return;
+        }
+
+        isLooking = true;
+        result = null;
+
+        try
+        {
+            result = await IpLookupService.LookupIpAsync(ipAddress);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Lookup error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isLooking = false;
+        }
+    }
+}

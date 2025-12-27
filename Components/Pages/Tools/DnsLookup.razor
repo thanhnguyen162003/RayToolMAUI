@@ -1,0 +1,118 @@
+@page "/tools/dns-lookup"
+@inject IDnsLookupService DnsService
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudBreadcrumbs Items="_breadcrumbs" Class="mb-4"></MudBreadcrumbs>
+    
+    <MudPaper Elevation="4" Class="pa-6">
+        <MudText Typo="Typo.h4" GutterBottom="true">
+            <MudIcon Icon="@Icons.Material.Filled.Dns" Class="mr-2" />
+            DNS Lookup
+        </MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-6">
+            Resolve domain names to IP addresses and view DNS information
+        </MudText>
+
+        <MudGrid>
+            <MudItem xs="12" md="9">
+                <MudTextField @bind-Value="domainName" Label="Domain Name" Variant="Variant.Outlined" 
+                             HelperText="Enter domain name (e.g., google.com)" Required="true" />
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" 
+                          OnClick="LookupDns" Disabled="isLooking" FullWidth="true" Size="Size.Large">
+                    @if (isLooking)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                        <span>Looking up...</span>
+                    }
+                    else
+                    {
+                        <span>Lookup</span>
+                    }
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+
+        @if (result != null)
+        {
+            <MudDivider Class="my-6" />
+            
+            @if (result.Success)
+            {
+                <MudCard Elevation="2">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6">DNS Records for @result.DomainName</MudText>
+                        </CardHeaderContent>
+                        <CardHeaderAvatar>
+                            <MudIcon Icon="@Icons.Material.Filled.Dns" Color="Color.Warning" />
+                        </CardHeaderAvatar>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        @if (result.IpAddresses.Any())
+                        {
+                            <MudText Typo="Typo.subtitle1" GutterBottom="true" Class="mb-3">
+                                <strong>IP Addresses (@result.RecordType records):</strong>
+                            </MudText>
+                            <MudList T="string" Dense="true">
+                                @foreach (var ip in result.IpAddresses)
+                                {
+                                    <MudListItem T="string" Icon="@Icons.Material.Filled.Public">
+                                        <MudChip T="string" Color="Color.Primary">@ip</MudChip>
+                                    </MudListItem>
+                                }
+                            </MudList>
+                        }
+                        else
+                        {
+                            <MudAlert Severity="Severity.Info">No DNS records found for this domain.</MudAlert>
+                        }
+                    </MudCardContent>
+                </MudCard>
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Error">Error: @result.ErrorMessage</MudAlert>
+            }
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<BreadcrumbItem> _breadcrumbs = new()
+    {
+        new BreadcrumbItem("Dashboard", href: AppConstants.Routes.Dashboard, icon: Icons.Material.Filled.Dashboard),
+        new BreadcrumbItem("DNS Lookup", href: null, disabled: true, icon: Icons.Material.Filled.Dns)
+    };
+
+    private string domainName = "";
+    private bool isLooking = false;
+    private DnsLookupResult? result;
+
+    private async Task LookupDns()
+    {
+        if (string.IsNullOrWhiteSpace(domainName))
+        {
+            Snackbar.Add("Please enter a domain name", Severity.Warning);
+            return;
+        }
+
+        isLooking = true;
+        result = null;
+
+        try
+        {
+            result = await DnsService.LookupAsync(domainName);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"DNS lookup error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isLooking = false;
+        }
+    }
+}

@@ -1,0 +1,143 @@
+@page "/tools/ping"
+@inject IPingService PingService
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudBreadcrumbs Items="_breadcrumbs" Class="mb-4"></MudBreadcrumbs>
+    
+    <MudPaper Elevation="4" Class="pa-6">
+        <MudText Typo="Typo.h4" GutterBottom="true">
+            <MudIcon Icon="@Icons.Material.Filled.NetworkCheck" Class="mr-2" />
+            Ping Tool
+        </MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-6">
+            Test network connectivity and measure response time
+        </MudText>
+
+        <MudGrid>
+            <MudItem xs="12" md="8">
+                <MudTextField @bind-Value="hostname" Label="Hostname or IP Address" Variant="Variant.Outlined" 
+                             HelperText="Enter hostname or IP to ping" Required="true" />
+            </MudItem>
+            <MudItem xs="12" md="2">
+                <MudNumericField @bind-Value="pingCount" Label="Count" Variant="Variant.Outlined" 
+                                Min="1" Max="100" />
+            </MudItem>
+            <MudItem xs="12" md="2">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" 
+                          OnClick="ExecutePing" Disabled="isPinging" FullWidth="true" Size="Size.Large">
+                    @if (isPinging)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                    }
+                    else
+                    {
+                        <span>Ping</span>
+                    }
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+
+        @if (result != null)
+        {
+            <MudDivider Class="my-6" />
+            
+            @if (result.Success)
+            {
+                <MudGrid Spacing="3">
+                    <MudItem xs="12" md="6">
+                        <MudPaper Elevation="2" Class="pa-4">
+                            <MudText Typo="Typo.h6" GutterBottom="true">Connection Status</MudText>
+                            <MudChip T="string" Color="@(result.IsReachable ? Color.Success : Color.Error)" Size="Size.Large" Class="mb-3">
+                                @(result.IsReachable ? "Reachable" : "Unreachable")
+                            </MudChip>
+                            <MudList T="string" Dense="true">
+                                <MudListItem T="string" Icon="@Icons.Material.Filled.Computer">
+                                    <MudText><strong>Host:</strong> @result.HostName</MudText>
+                                </MudListItem>
+                                <MudListItem T="string" Icon="@Icons.Material.Filled.Public">
+                                    <MudText><strong>IP:</strong> @result.IpAddress</MudText>
+                                </MudListItem>
+                                <MudListItem T="string" Icon="@Icons.Material.Filled.Timer">
+                                    <MudText><strong>Avg. Response:</strong> @result.RoundtripTime ms</MudText>
+                                </MudListItem>
+                                <MudListItem T="string" Icon="@Icons.Material.Filled.TimerOff">
+                                    <MudText><strong>TTL:</strong> @result.Ttl</MudText>
+                                </MudListItem>
+                            </MudList>
+                        </MudPaper>
+                    </MudItem>
+                    
+                    <MudItem xs="12" md="6">
+                        <MudPaper Elevation="2" Class="pa-4">
+                            <MudText Typo="Typo.h6" GutterBottom="true">Statistics</MudText>
+                            <MudList T="string" Dense="true">
+                                <MudListItem T="string" Icon="@Icons.Material.Filled.Send">
+                                    <MudText><strong>Packets Sent:</strong> @result.PacketsSent</MudText>
+                                </MudListItem>
+                                <MudListItem T="string" Icon="@Icons.Material.Filled.CheckCircle">
+                                    <MudText><strong>Packets Received:</strong> @result.PacketsReceived</MudText>
+                                </MudListItem>
+                                <MudListItem T="string" Icon="@Icons.Material.Filled.Error">
+                                    <MudText><strong>Packets Lost:</strong> @result.PacketsLost</MudText>
+                                </MudListItem>
+                                <MudListItem T="string" Icon="@Icons.Material.Filled.Percent">
+                                    <MudText><strong>Loss Rate:</strong> @((result.PacketsSent > 0 ? (result.PacketsLost * 100.0 / result.PacketsSent).ToString("F1") : "0"))%</MudText>
+                                </MudListItem>
+                            </MudList>
+                        </MudPaper>
+                    </MudItem>
+                </MudGrid>
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Error">Error: @result.ErrorMessage</MudAlert>
+            }
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<BreadcrumbItem> _breadcrumbs = new()
+    {
+        new BreadcrumbItem("Dashboard", href: AppConstants.Routes.Dashboard, icon: Icons.Material.Filled.Dashboard),
+        new BreadcrumbItem("Ping Tool", href: null, disabled: true, icon: Icons.Material.Filled.NetworkCheck)
+    };
+
+    private string hostname = "";
+    private int pingCount = 4;
+    private bool isPinging = false;
+    private PingResult? result;
+
+    private async Task ExecutePing()
+    {
+        if (string.IsNullOrWhiteSpace(hostname) || !hostname.IsValidHostName())
+        {
+            Snackbar.Add("Please enter a valid hostname or IP address", Severity.Warning);
+            return;
+        }
+
+        var validation = ValidationHelper.ValidatePingCount(pingCount);
+        if (!validation.IsValid)
+        {
+            Snackbar.Add(validation.ErrorMessage, Severity.Warning);
+            return;
+        }
+
+        isPinging = true;
+        result = null;
+
+        try
+        {
+            result = await PingService.PingAsync(hostname, pingCount);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Ping error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isPinging = false;
+        }
+    }
+}
