@@ -1,6 +1,6 @@
 using System.Net.NetworkInformation;
-using TestMauiApp.Core.Interfaces;
-using TestMauiApp.Core.Models;
+using Core.Interfaces;
+using Core.Models;
 
 namespace TestMauiApp.Application.Services;
 
@@ -41,7 +41,6 @@ public class PingService : IPingService
                 }
                 catch
                 {
-                    // Individual ping failed, continue
                 }
 
                 // Small delay between pings

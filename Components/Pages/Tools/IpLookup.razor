@@ -92,12 +92,24 @@
                                     <MudListItem T="string" Icon="@Icons.Material.Filled.CorporateFare">
                                         <MudText><strong>Organization:</strong> @result.Organization</MudText>
                                     </MudListItem>
+                                    <MudListItem T="string" Icon="@Icons.Material.Filled.Router">
+                                        <MudText><strong>AS:</strong> @result.As (@result.AsName)</MudText>
+                                    </MudListItem>
                                     @if (result.Latitude.HasValue && result.Longitude.HasValue)
                                     {
                                         <MudListItem T="string" Icon="@Icons.Material.Filled.MyLocation">
-                                            <MudText><strong>Coordinates:</strong> @result.Latitude.Value.ToString("F4"), @result.Longitude.Value.ToString("F4")</MudText>
+                                            <MudText><strong>Coordinates:</strong> @result.Latitude.Value.ToString("F4"), @result.Longitude.Value.ToString("F4") (@result.Zip)</MudText>
                                         </MudListItem>
                                     }
+                                    <MudDivider Class="my-2" />
+                                    <MudListItem T="string" Icon="@Icons.Material.Filled.Security">
+                                        <MudText><strong>Security & Type:</strong></MudText>
+                                        <MudStack Row="true" Class="mt-2" Spacing="1">
+                                            <MudChip T="string" Color="@(result.IsMobile ? Color.Warning : Color.Default)" Size="Size.Small">Mobile: @(result.IsMobile)</MudChip>
+                                            <MudChip T="string" Color="@(result.IsProxy ? Color.Error : Color.Success)" Size="Size.Small">Proxy: @(result.IsProxy)</MudChip>
+                                            <MudChip T="string" Color="@(result.IsHosting ? Color.Info : Color.Default)" Size="Size.Small">Hosting: @(result.IsHosting)</MudChip>
+                                        </MudStack>
+                                    </MudListItem>
                                 </MudList>
                             </MudCardContent>
                         </MudCard>

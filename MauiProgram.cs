@@ -3,10 +3,11 @@ using Microsoft.Extensions.Configuration;
 using System.Reflection;
 using MudBlazor.Services;
 using Microsoft.AspNetCore.Components.Authorization;
-using TestMauiApp.Infrastructure.Configuration;
-using TestMauiApp.Infrastructure.Authentication;
 using TestMauiApp.Application.Extensions;
-using TestMauiApp.Core.Interfaces;
+using Core.Interfaces;
+using TestMauiApp.Infrastructure.Configuration;
+using Infrastructure.Authentication;
+using TestMauiApp.Infrastructure.Authentication;
 
 namespace TestMauiApp
 {
@@ -22,7 +23,6 @@ namespace TestMauiApp
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                 });
 
-            // Load configuration from appsettings.json
             var assembly = Assembly.GetExecutingAssembly();
             using var stream = assembly.GetManifestResourceStream("TestMauiApp.appsettings.json");
             
@@ -47,7 +47,7 @@ namespace TestMauiApp
             // Register application services
             builder.Services.AddApplicationServices();
 
-            // Register authentication services (as Singleton for MAUI)
+            // Register authentication services
             builder.Services.AddSingleton<IAuthenticationService, AuthenticationService>();
             builder.Services.AddSingleton<AuthenticationStateProvider, AuthStateProvider>();
             builder.Services.AddAuthorizationCore();

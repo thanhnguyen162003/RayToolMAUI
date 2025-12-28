@@ -1,16 +1,58 @@
 @inherits LayoutComponentBase
 @inject IAuthenticationService AuthService
 @inject NavigationManager Navigation
+@inject ISnackbar Snackbar
 
 <MudThemeProvider Theme="_theme" IsDarkMode="true" />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-<div style="min-height: 100vh; display: flex; flex-direction: column;">
-    @Body
-</div>
+<MudLayout>
+    <AuthorizeView>
+        <Authorized>
+            <MudAppBar Elevation="1">
+                <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+                <MudText Typo="Typo.h5" Class="ml-3">RayTools</MudText>
+                <MudSpacer />
+                <MudIconButton Icon="@Icons.Material.Filled.Logout" Color="Color.Inherit" OnClick="Logout" Title="Logout" />
+            </MudAppBar>
+            <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
+                <MudNavMenu>
+                    <MudNavLink Href="@AppConstants.Routes.Dashboard" Icon="@Icons.Material.Filled.Dashboard" Match="NavLinkMatch.All">Dashboard</MudNavLink>
+                    
+                    <MudNavGroup Title="Networking" Icon="@Icons.Material.Filled.NetworkCheck" Expanded="true">
+                        <MudNavLink Href="@AppConstants.Routes.PortScanner" Icon="@Icons.Material.Filled.Scanner">Port Scanner</MudNavLink>
+                        <MudNavLink Href="@AppConstants.Routes.IpLookup" Icon="@Icons.Material.Filled.Search">IP Lookup</MudNavLink>
+                        <MudNavLink Href="@AppConstants.Routes.PingTool" Icon="@Icons.Material.Filled.NetworkCell">Ping Tool</MudNavLink>
+                        <MudNavLink Href="@AppConstants.Routes.DnsLookup" Icon="@Icons.Material.Filled.Dns">DNS Lookup</MudNavLink>
+                        <MudNavLink Href="@AppConstants.Routes.MyPublicIp" Icon="@Icons.Material.Filled.Public">My Public IP</MudNavLink>
+                    </MudNavGroup>
+                </MudNavMenu>
+            </MudDrawer>
+            <MudMainContent>
+                <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+                    @Body
+                </MudContainer>
+            </MudMainContent>
+        </Authorized>
+        <NotAuthorized>
+            <MudMainContent>
+                <div class="d-flex justify-center align-center" style="height: 100vh;">
+                    @Body
+                </div>
+            </MudMainContent>
+        </NotAuthorized>
+    </AuthorizeView>
+</MudLayout>
 
 @code {
+    bool _drawerOpen = true;
+
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
     private MudTheme _theme = new()
     {
         PaletteLight = new PaletteLight()
@@ -36,4 +78,11 @@
             TextDisabled = "rgba(255,255,255, 0.38)"
         }
     };
+
+    private async Task Logout()
+    {
+        await AuthService.LogoutAsync();
+        Snackbar.Add("Logged out successfully", Severity.Info);
+        Navigation.NavigateTo(AppConstants.Routes.Login, true);
+    }
 }

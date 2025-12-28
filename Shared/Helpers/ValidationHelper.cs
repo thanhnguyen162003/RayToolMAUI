@@ -13,8 +13,8 @@ public static class ValidationHelper
         if (startPort > endPort)
             return (false, "Start port must be less than or equal to end port");
 
-        if (endPort - startPort > 1000)
-            return (false, "Port range too large (max 1000 ports)");
+        if (endPort - startPort > 65535)
+            return (false, "Port range too large (max 65535 ports)");
 
         return (true, string.Empty);
     }

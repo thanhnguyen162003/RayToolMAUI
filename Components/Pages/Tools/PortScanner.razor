@@ -45,45 +45,50 @@
             </MudItem>
         </MudGrid>
 
-        @if (scanResult != null)
+        @if (isScanning)
+        {
+            <MudProgressLinear Color="Color.Primary" Value="@scanProgress" Class="my-4" />
+            <MudText Typo="Typo.body2" Align="Align.Center">@currentStatus</MudText>
+        }
+
+        @if (openPorts.Any())
         {
             <MudDivider Class="my-6" />
+            <MudText Typo="Typo.h6" Class="mb-4">Open Ports Found</MudText>
             
-            @if (scanResult.Success)
-            {
-                <MudAlert Severity="Severity.Success" Class="mb-4">
-                    Scan completed! Found @scanResult.OpenPorts open ports out of @scanResult.TotalScanned scanned.
-                </MudAlert>
-
-                @if (scanResult.Results.Any())
-                {
-                    <MudTable Items="@scanResult.Results" Hover="true" Striped="true" Dense="true">
-                        <HeaderContent>
-                            <MudTh>Port</MudTh>
-                            <MudTh>Status</MudTh>
-                            <MudTh>Service</MudTh>
-                            <MudTh>Response Time</MudTh>
-                        </HeaderContent>
-                        <RowTemplate>
-                            <MudTd DataLabel="Port">@context.Port</MudTd>
-                            <MudTd DataLabel="Status">
-                                <MudChip T="string" Color="Color.Success" Size="Size.Small">Open</MudChip>
-                            </MudTd>
-                            <MudTd DataLabel="Service">@context.ServiceName</MudTd>
-                            <MudTd DataLabel="Response Time">@context.ResponseTimeMs ms</MudTd>
-                        </RowTemplate>
-                    </MudTable>
-                }
-                else
-                {
-                    <MudAlert Severity="Severity.Info">No open ports found in the specified range.</MudAlert>
-                }
-            }
-            else
-            {
-                <MudAlert Severity="Severity.Error">Error: @scanResult.ErrorMessage</MudAlert>
-            }
+            <MudTable Items="@openPorts" Hover="true" Striped="true" Dense="true" Elevation="2">
+                <HeaderContent>
+                    <MudTh>Port</MudTh>
+                    <MudTh>Status</MudTh>
+                    <MudTh>Service</MudTh>
+                    <MudTh>Response Time</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Port">@context.Port</MudTd>
+                    <MudTd DataLabel="Status">
+                        <MudChip T="string" Color="Color.Success" Size="Size.Small">Open</MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="Service">@context.ServiceName</MudTd>
+                    <MudTd DataLabel="Response Time">@context.ResponseTimeMs ms</MudTd>
+                </RowTemplate>
+            </MudTable>
         }
+        else if (!isScanning && scanCompleted)
+        {
+             <MudDivider Class="my-6" />
+             <MudAlert Severity="Severity.Info">Scan completed. No open ports found in the specified range.</MudAlert>
+        }
+        
+        <MudExpansionPanels Class="mt-4">
+            <MudExpansionPanel Text="Scan Log">
+                <div style="max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 0.8rem;">
+                    @foreach (var log in scanLogs)
+                    {
+                        <div class="@log.LogClass">@log.Message</div>
+                    }
+                </div>
+            </MudExpansionPanel>
+        </MudExpansionPanels>
     </MudPaper>
 </MudContainer>
 
@@ -98,7 +103,17 @@
     private int startPort = 80;
     private int endPort = 100;
     private bool isScanning = false;
-    private PortScanBatchResult? scanResult;
+    private bool scanCompleted = false;
+    private double scanProgress = 0;
+    private string currentStatus = "Ready to scan";
+    private List<PortScanResult> openPorts = new();
+    private List<ScanLogItem> scanLogs = new();
+
+    private class ScanLogItem
+    {
+        public string Message { get; set; } = "";
+        public string LogClass { get; set; } = "";
+    }
 
     private async Task ScanPorts()
     {
@@ -115,16 +130,54 @@
             return;
         }
 
+        // Reset state
         isScanning = true;
-        scanResult = null;
+        scanCompleted = false;
+        scanProgress = 0;
+        openPorts.Clear();
+        scanLogs.Clear();
+        currentStatus = "Starting scan...";
 
         try
         {
-            scanResult = await PortScannerService.ScanPortRangeAsync(ipAddress, startPort, endPort);
+            int totalPorts = endPort - startPort + 1;
+            int processedCount = 0;
+
+            await foreach (var result in PortScannerService.ScanPortsStreamAsync(ipAddress, startPort, endPort, concurrency: 50))
+            {
+                processedCount++;
+                scanProgress = (double)processedCount / totalPorts * 100;
+                currentStatus = $"Scanning port {result.Port}...";
+
+                // Add log
+                string logMsg = $"Checked port {result.Port}: {(result.IsOpen ? "OPEN" : "CLOSED")}";
+                string cssClass = result.IsOpen ? "mud-success-text font-weight-bold" : "mud-text-secondary";
+                
+                // Keep log size reasonable
+                if (scanLogs.Count > 100) scanLogs.RemoveAt(0);
+                scanLogs.Add(new ScanLogItem { Message = logMsg, LogClass = cssClass });
+
+                if (result.IsOpen)
+                {
+                    openPorts.Add(result);
+                    // Force UI update for found ports immediately
+                    StateHasChanged();
+                }
+
+                if (processedCount % 10 == 0)
+                {
+                    StateHasChanged();
+                }
+            }
+
+            scanCompleted = true;
+            currentStatus = "Scan completed!";
+            Snackbar.Add($"Scan finished. Found {openPorts.Count} open ports.", Severity.Success);
         }
         catch (Exception ex)
         {
             Snackbar.Add($"Scan error: {ex.Message}", Severity.Error);
+            scanLogs.Add(new ScanLogItem { Message = $"ERROR: {ex.Message}", LogClass = "mud-error-text" });
         }
         finally
         {

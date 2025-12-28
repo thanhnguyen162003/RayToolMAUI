@@ -1,6 +1,6 @@
+using Core.Interfaces;
+using Core.Models;
 using System.Net;
-using TestMauiApp.Core.Interfaces;
-using TestMauiApp.Core.Models;
 
 namespace TestMauiApp.Application.Services;
 

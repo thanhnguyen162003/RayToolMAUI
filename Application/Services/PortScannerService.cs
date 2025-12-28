@@ -1,6 +1,6 @@
 using System.Net.Sockets;
-using TestMauiApp.Core.Interfaces;
-using TestMauiApp.Core.Models;
+using Core.Interfaces;
+using Core.Models;
 
 namespace TestMauiApp.Application.Services;
 
@@ -75,6 +75,42 @@ public class PortScannerService : IPortScannerService
         }
 
         return batchResult;
+    }
+
+    public async IAsyncEnumerable<PortScanResult> ScanPortsStreamAsync(string ipAddress, int startPort, int endPort, int concurrency = 100)
+    {
+        var semaphore = new SemaphoreSlim(concurrency);
+        var tasks = new List<Task<PortScanResult>>();
+
+        for (int port = startPort; port <= endPort; port++)
+        {
+            await semaphore.WaitAsync();
+
+            tasks.Add(Task.Run(async () =>
+            {
+                try
+                {
+                    return await ScanPortAsync(ipAddress, port);
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+            }));
+
+            var completedTasks = tasks.Where(t => t.IsCompleted).ToList();
+            foreach (var task in completedTasks)
+            {
+                tasks.Remove(task);
+                yield return await task;
+            }
+        }
+
+        await Task.WhenAll(tasks);
+        foreach (var task in tasks)
+        {
+            yield return await task;
+        }
     }
 
     private static string GetServiceName(int port)

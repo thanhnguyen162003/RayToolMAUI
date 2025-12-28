@@ -18,7 +18,6 @@ public static class StringExtensions
         if (string.IsNullOrWhiteSpace(input))
             return false;
 
-        // Basic domain name validation
         var domainPattern = @"^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$";
         return Regex.IsMatch(input, domainPattern);
     }
