@@ -149,7 +149,6 @@
                 scanProgress = (double)processedCount / totalPorts * 100;
                 currentStatus = $"Scanning port {result.Port}...";
 
-                // Add log
                 string logMsg = $"Checked port {result.Port}: {(result.IsOpen ? "OPEN" : "CLOSED")}";
                 string cssClass = result.IsOpen ? "mud-success-text font-weight-bold" : "mud-text-secondary";
                 
