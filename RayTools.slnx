@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Core/Core.csproj" Id="5a20755a-fe1b-4283-adac-404ba4449d76" />
+  <Project Path="Infrastructure/Infrastructure.csproj" Id="c3930000-3ac3-4e44-a253-32acafd7ef8d" />
+  <Project Path="RayTool/RayTool.csproj" />
+</Solution>
