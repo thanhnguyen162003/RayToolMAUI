@@ -4,6 +4,7 @@
 @inject ISnackbar Snackbar
 
 <MudThemeProvider Theme="_theme" IsDarkMode="true" />
+<MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
@@ -26,6 +27,23 @@
                         <MudNavLink Href="@AppConstants.Routes.PingTool" Icon="@Icons.Material.Filled.NetworkCell">Ping Tool</MudNavLink>
                         <MudNavLink Href="@AppConstants.Routes.DnsLookup" Icon="@Icons.Material.Filled.Dns">DNS Lookup</MudNavLink>
                         <MudNavLink Href="@AppConstants.Routes.MyPublicIp" Icon="@Icons.Material.Filled.Public">My Public IP</MudNavLink>
+                        <MudDivider Class="my-2"/>
+                        <MudNavLink Href="@AppConstants.Routes.SubnetCalculator" Icon="@Icons.Material.Filled.Calculate">Subnet Calculator</MudNavLink>
+                        <MudNavLink Href="@AppConstants.Routes.TraceRoute" Icon="@Icons.Material.Filled.Route">Trace Route</MudNavLink>
+                        <MudNavLink Href="@AppConstants.Routes.WhoisLookup" Icon="@Icons.Material.Filled.ContactPage">Whois Lookup</MudNavLink>
+                        <MudNavLink Href="@AppConstants.Routes.MacLookup" Icon="@Icons.Material.Filled.DeviceHub">MAC Lookup</MudNavLink>
+                    </MudNavGroup>
+                    
+                    <MudNavGroup Title="Cloud & DevOps" Icon="@Icons.Material.Filled.Cloud" Expanded="true">
+                        <MudNavLink Href="@AppConstants.Routes.CloudLatency" Icon="@Icons.Material.Filled.Speed">Cloud Latency</MudNavLink>
+                        <MudNavLink Href="@AppConstants.Routes.SslAuditor" Icon="@Icons.Material.Filled.Lock">SSL Auditor</MudNavLink>
+                        <MudNavLink Href="@AppConstants.Routes.HeaderAnalyzer" Icon="@Icons.Material.Filled.Security">Header Analyzer</MudNavLink>
+                    </MudNavGroup>
+                    
+                    <MudNavGroup Title="Developer Utilities" Icon="@Icons.Material.Filled.Code" Expanded="true">
+                        <MudNavLink Href="@AppConstants.Routes.JwtDecoder" Icon="@Icons.Material.Filled.VpnKey">JWT Decoder</MudNavLink>
+                        <MudNavLink Href="@AppConstants.Routes.JsonFormatter" Icon="@Icons.Material.Filled.FormatAlignLeft">JSON/XML Formatter</MudNavLink>
+                        <MudNavLink Href="@AppConstants.Routes.Base64Converter" Icon="@Icons.Material.Filled.SwapHoriz">Base64 Converter</MudNavLink>
                     </MudNavGroup>
                 </MudNavMenu>
             </MudDrawer>

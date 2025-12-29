@@ -1,0 +1,123 @@
+@page "/tools/trace-route"
+@inject ITraceRouteService TraceService
+@inject ISnackbar Snackbar
+@using Core.Models
+@using Core.Interfaces
+@using Core.Constants
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudBreadcrumbs Items="_breadcrumbs" Class="mb-4"></MudBreadcrumbs>
+    
+    <MudPaper Elevation="4" Class="pa-6">
+        <MudText Typo="Typo.h4" GutterBottom="true">
+            <MudIcon Icon="@Icons.Material.Filled.Route" Class="mr-2" />
+            Trace Route
+        </MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-6">
+            Visual hop-by-hop analysis to a target host.
+        </MudText>
+
+        <MudGrid>
+            <MudItem xs="12" md="8">
+                <MudTextField @bind-Value="host" Label="Hostname / IP" Variant="Variant.Outlined" 
+                             HelperText="e.g. google.com" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Public" />
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="StartTrace" 
+                          Disabled="isTracing" FullWidth="true" Class="mt-2" Size="Size.Large">
+                    @if (isTracing)
+                    {
+                         <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                         <span>Tracing...</span>
+                    }
+                    else
+                    {
+                         <MudIcon Icon="@Icons.Material.Filled.PlayArrow" Class="mr-2" />
+                         <span>Start Trace</span>
+                    }
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+        
+        @if (hops.Any())
+        {
+             <MudDivider Class="my-6" />
+             
+             <MudTimeline TimelinePosition="TimelinePosition.Start">
+                 @foreach (var hop in hops)
+                 {
+                     <MudTimelineItem Color="@GetHopColor(hop)" Size="Size.Small">
+                         <ItemContent>
+                             <MudCard Outlined="true" Class="ma-2">
+                                 <MudCardContent>
+                                     <MudText Typo="Typo.button">Hop @hop.HopNumber</MudText>
+                                     @if (hop.IsSuccess)
+                                     {
+                                         <MudText Typo="Typo.body1">@hop.Hostname</MudText>
+                                         <MudText Typo="Typo.caption">@hop.IpAddress</MudText>
+                                         <MudChip T="string" Size="Size.Small" Color="Color.Info" Class="ml-2">@hop.RoundTripTime ms</MudChip>
+                                     }
+                                     else
+                                     {
+                                          <MudText Typo="Typo.body1" Color="Color.Error">Request Timed Out</MudText>
+                                     }
+                                 </MudCardContent>
+                             </MudCard>
+                         </ItemContent>
+                     </MudTimelineItem>
+                 }
+             </MudTimeline>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<BreadcrumbItem> _breadcrumbs = new()
+    {
+        new BreadcrumbItem("Dashboard", href: AppConstants.Routes.Dashboard, icon: Icons.Material.Filled.Dashboard),
+        new BreadcrumbItem("Trace Route", href: null, disabled: true, icon: Icons.Material.Filled.Route)
+    };
+
+    private string host = "";
+    private bool isTracing = false;
+    private List<TraceHop> hops = new();
+
+    private async Task StartTrace()
+    {
+        if (string.IsNullOrWhiteSpace(host))
+        {
+            Snackbar.Add("Please enter a hostname", Severity.Warning);
+            return;
+        }
+
+        isTracing = true;
+        hops.Clear();
+
+        try
+        {
+            await foreach (var hop in TraceService.TraceAsync(host))
+            {
+                hops.Add(hop);
+                StateHasChanged();
+                
+                // Auto-scroll logic if needed, or simple update
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isTracing = false;
+        }
+    }
+
+    private Color GetHopColor(TraceHop hop)
+    {
+        if (!hop.IsSuccess) return Color.Error;
+        if (hop.RoundTripTime < 50) return Color.Success;
+        if (hop.RoundTripTime < 150) return Color.Warning;
+        return Color.Warning;
+    }
+}

@@ -1,0 +1,113 @@
+@page "/tools/header-analyzer"
+@inject IHeaderAnalyzerService HeaderAnalyzerService
+@inject ISnackbar Snackbar
+@using Core.Models
+@using Core.Interfaces
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudBreadcrumbs Items="_breadcrumbs" Class="mb-4"></MudBreadcrumbs>
+    
+    <MudPaper Elevation="4" Class="pa-6">
+        <MudText Typo="Typo.h4" GutterBottom="true">
+            <MudIcon Icon="@Icons.Material.Filled.Security" Class="mr-2" />
+            HTTP Header Analyzer
+        </MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-6">
+            Debug security headers (CORS, CSP, HSTS).
+        </MudText>
+
+        <MudGrid>
+             <MudItem xs="12" md="8">
+                <MudTextField @bind-Value="url" Label="Target URL" Variant="Variant.Outlined" 
+                             HelperText="e.g. https://google.com" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Link" />
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AnalyzeHeaders" 
+                          Disabled="isAnalyzing" FullWidth="true" Class="mt-2" Size="Size.Large">
+                     @if (isAnalyzing) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+                    else { <MudIcon Icon="@Icons.Material.Filled.Search" Class="mr-2" /> }
+                    Analyze
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+
+        @if (results.Any())
+        {
+            <MudDivider Class="my-6" />
+            
+            <MudTable Items="@results" Hover="true" Striped="true" Dense="true">
+                <HeaderContent>
+                    <MudTh>Severity</MudTh>
+                    <MudTh>Header</MudTh>
+                    <MudTh>Analysis</MudTh>
+                    <MudTh>Recommendation</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Severity">
+                        <MudChip T="string" Color="@GetSeverityColor(context.Severity)" Size="Size.Small">@context.Severity</MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="Header">
+                        <MudText Typo="Typo.subtitle2">@context.HeaderName</MudText>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary" Style="word-break: break-all;">@context.HeaderValue</MudText>
+                    </MudTd>
+                     <MudTd DataLabel="Analysis">
+                        @context.Description
+                    </MudTd>
+                     <MudTd DataLabel="Recommendation">
+                        @context.Recommendation
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<BreadcrumbItem> _breadcrumbs = new()
+    {
+        new BreadcrumbItem("Dashboard", href: AppConstants.Routes.Dashboard, icon: Icons.Material.Filled.Dashboard),
+        new BreadcrumbItem("Header Analyzer", href: null, disabled: true, icon: Icons.Material.Filled.Security)
+    };
+
+    private string url = "";
+    private bool isAnalyzing = false;
+    private List<HeaderAnalysisResult> results = new();
+
+    private async Task AnalyzeHeaders()
+    {
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            Snackbar.Add("Please enter a URL", Severity.Warning);
+            return;
+        }
+
+        isAnalyzing = true;
+        results.Clear();
+
+        try
+        {
+            results = await HeaderAnalyzerService.AnalyzeHeadersAsync(url);
+        }
+        catch (Exception ex)
+        {
+             Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isAnalyzing = false;
+        }
+    }
+
+    private Color GetSeverityColor(string severity)
+    {
+        return severity switch
+        {
+            "Critical" => Color.Error,
+            "High" => Color.Error,
+            "Medium" => Color.Warning,
+            "Low" => Color.Info,
+            "Info" => Color.Success,
+            _ => Color.Default
+        };
+    }
+}

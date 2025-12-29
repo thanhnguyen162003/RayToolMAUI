@@ -1,0 +1,102 @@
+@page "/tools/mac-lookup"
+@inject IMacAddressService MacService
+@inject ISnackbar Snackbar
+@using Core.Models
+@using Core.Interfaces
+@using Core.Constants
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudBreadcrumbs Items="_breadcrumbs" Class="mb-4"></MudBreadcrumbs>
+    
+    <MudPaper Elevation="4" Class="pa-6">
+        <MudText Typo="Typo.h4" GutterBottom="true">
+            <MudIcon Icon="@Icons.Material.Filled.DeviceHub" Class="mr-2" />
+            MAC Address Lookup
+        </MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-6">
+             Find OUI Vendor identification from MAC address.
+        </MudText>
+
+        <MudGrid>
+            <MudItem xs="12" md="8">
+                <MudTextField @bind-Value="macAddress" Label="MAC Address" Variant="Variant.Outlined" 
+                             HelperText="e.g. 00:00:0C:xx:xx:xx" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.QrCode" />
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LookupMac" 
+                          Disabled="isLoading" FullWidth="true" Class="mt-2" Size="Size.Large">
+                     @if (isLoading)
+                    {
+                         <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                         <span>Searching...</span>
+                    }
+                    else
+                    {
+                         <MudIcon Icon="@Icons.Material.Filled.Search" Class="mr-2" />
+                         <span>Lookup</span>
+                    }
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+
+        @if (vendorInfo != null)
+        {
+            <MudDivider Class="my-6" />
+            
+            @if (vendorInfo.Found)
+            {
+                <MudAlert Severity="Severity.Success">Vendor Found!</MudAlert>
+                <MudCard Class="mt-4" Elevation="3">
+                    <MudCardContent>
+                        <MudText Typo="Typo.h5" Color="Color.Primary" GutterBottom="true">@vendorInfo.VendorName</MudText>
+                        <MudText><strong>Prefix:</strong> @vendorInfo.MacPrefix</MudText>
+                    </MudCardContent>
+                </MudCard>
+            }
+            else
+            {
+                 <MudAlert Severity="Severity.Warning">
+                     Start with first 6 hex characters of MAC address.
+                     @if(!string.IsNullOrEmpty(vendorInfo.Error)) { <p>@vendorInfo.Error</p> }
+                 </MudAlert>
+            }
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<BreadcrumbItem> _breadcrumbs = new()
+    {
+        new BreadcrumbItem("Dashboard", href: AppConstants.Routes.Dashboard, icon: Icons.Material.Filled.Dashboard),
+        new BreadcrumbItem("MAC Lookup", href: null, disabled: true, icon: Icons.Material.Filled.DeviceHub)
+    };
+
+    private string macAddress = "";
+    private bool isLoading = false;
+    private MacVendorInfo? vendorInfo;
+
+    private async Task LookupMac()
+    {
+        if (string.IsNullOrWhiteSpace(macAddress))
+        {
+            Snackbar.Add("Please enter a MAC address", Severity.Warning);
+            return;
+        }
+
+        isLoading = true;
+        vendorInfo = null;
+
+        try
+        {
+            vendorInfo = await MacService.LookupVendorAsync(macAddress);
+        }
+        catch (Exception ex)
+        {
+             Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

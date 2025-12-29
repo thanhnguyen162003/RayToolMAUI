@@ -1,0 +1,116 @@
+@page "/tools/whois-lookup"
+@inject IWhoisService WhoisService
+@inject ISnackbar Snackbar
+@using Core.Models
+@using Core.Interfaces
+@using Core.Constants
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudBreadcrumbs Items="_breadcrumbs" Class="mb-4"></MudBreadcrumbs>
+    
+    <MudPaper Elevation="4" Class="pa-6">
+        <MudText Typo="Typo.h4" GutterBottom="true">
+            <MudIcon Icon="@Icons.Material.Filled.ContactPage" Class="mr-2" />
+            Whois Domain Lookup
+        </MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-6">
+            Detailed registrar, expiry, and owner information for domains.
+        </MudText>
+
+        <MudGrid>
+            <MudItem xs="12" md="8">
+                <MudTextField @bind-Value="domain" Label="Domain Name" Variant="Variant.Outlined" 
+                             HelperText="e.g. microsoft.com" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Language" />
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LookupWhois" 
+                          Disabled="isLoading" FullWidth="true" Class="mt-2" Size="Size.Large">
+                     @if (isLoading)
+                    {
+                         <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                         <span>Searching...</span>
+                    }
+                    else
+                    {
+                         <MudIcon Icon="@Icons.Material.Filled.Search" Class="mr-2" />
+                         <span>Lookup</span>
+                    }
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+
+        @if (whoisRecord != null)
+        {
+            <MudDivider Class="my-6" />
+            
+            @if (!string.IsNullOrEmpty(whoisRecord.Error))
+            {
+                <MudAlert Severity="Severity.Error">@whoisRecord.Error</MudAlert>
+            }
+            else
+            {
+                 <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudCard Elevation="2" Class="mb-4">
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.h6">Result Summary</MudText>
+                                </CardHeaderContent>
+                            </MudCardHeader>
+                            <MudCardContent>
+                                <MudList T="string" Dense="true">
+                                    <MudListItem><strong>Registrar:</strong> @whoisRecord.Registrar</MudListItem>
+                                    <MudListItem><strong>Created:</strong> @whoisRecord.CreationDate</MudListItem>
+                                    <MudListItem><strong>Expires:</strong> @whoisRecord.ExpiryDate</MudListItem>
+                                </MudList>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                 </MudGrid>
+
+                 <MudExpansionPanels MultiExpansion="true">
+                    <MudExpansionPanel Text="Raw WHOIS Data" IsExpanded="true">
+                        <div style="background-color: #f5f5f5; padding: 10px; border-radius: 4px; color: black; font-family: monospace; white-space: pre-wrap;">@whoisRecord.RawText</div>
+                    </MudExpansionPanel>
+                </MudExpansionPanels>
+            }
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<BreadcrumbItem> _breadcrumbs = new()
+    {
+        new BreadcrumbItem("Dashboard", href: AppConstants.Routes.Dashboard, icon: Icons.Material.Filled.Dashboard),
+        new BreadcrumbItem("Whois Lookup", href: null, disabled: true, icon: Icons.Material.Filled.ContactPage)
+    };
+
+    private string domain = "";
+    private bool isLoading = false;
+    private WhoisRecord? whoisRecord;
+
+    private async Task LookupWhois()
+    {
+        if (string.IsNullOrWhiteSpace(domain))
+        {
+            Snackbar.Add("Please enter a domain", Severity.Warning);
+            return;
+        }
+
+        isLoading = true;
+        whoisRecord = null;
+
+        try
+        {
+            whoisRecord = await WhoisService.LookupAsync(domain);
+        }
+        catch (Exception ex)
+        {
+             Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

@@ -1,0 +1,89 @@
+@page "/tools/base64-converter"
+@inject IBase64Service Base64Service
+@inject ISnackbar Snackbar
+@using Core.Interfaces
+@using Core.Constants
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudBreadcrumbs Items="_breadcrumbs" Class="mb-4"></MudBreadcrumbs>
+    
+    <MudPaper Elevation="4" Class="pa-6">
+        <MudText Typo="Typo.h4" GutterBottom="true">
+            <MudIcon Icon="@Icons.Material.Filled.SwapHoriz" Class="mr-2" />
+            Base64 Converter
+        </MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-6">
+             Quick encoding and decoding of text.
+        </MudText>
+
+        <MudGrid>
+            <MudItem xs="12" md="5">
+                <MudTextField @bind-Value="TextInput" Label="Plain Text" Variant="Variant.Outlined" 
+                             Lines="8" TextChanged="OnTextChanged" Immediate="true" />
+            </MudItem>
+            
+            <MudItem xs="12" md="2" Class="d-flex justify-center align-center flex-column">
+                <MudIconButton Icon="@Icons.Material.Filled.ArrowForward" Color="Color.Primary" Size="Size.Large" Class="d-none d-md-flex" />
+                <MudIcon Icon="@Icons.Material.Filled.ArrowDownward" Color="Color.Primary" Size="Size.Large" Class="d-flex d-md-none my-2" />
+                <MudText Typo="Typo.caption" Align="Align.Center">Auto-converting</MudText>
+            </MudItem>
+            
+            <MudItem xs="12" md="5">
+                 <MudTextField @bind-Value="Base64Input" Label="Base64 Encoded" Variant="Variant.Outlined" 
+                             Lines="8" TextChanged="OnBase64Changed" Immediate="true" />
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<BreadcrumbItem> _breadcrumbs = new()
+    {
+        new BreadcrumbItem("Dashboard", href: AppConstants.Routes.Dashboard, icon: Icons.Material.Filled.Dashboard),
+        new BreadcrumbItem("Base64 Converter", href: null, disabled: true, icon: Icons.Material.Filled.SwapHoriz)
+    };
+
+    private string _textInput = "";
+    private string _base64Input = "";
+    private bool _isUpdating = false;
+
+    private string TextInput
+    {
+        get => _textInput;
+        set
+        {
+            if (_textInput != value)
+            {
+                _textInput = value;
+                if (!_isUpdating)
+                {
+                    _isUpdating = true;
+                    _base64Input = Base64Service.Encode(value);
+                    _isUpdating = false;
+                }
+            }
+        }
+    }
+
+    private string Base64Input
+    {
+        get => _base64Input;
+        set
+        {
+            if (_base64Input != value)
+            {
+                _base64Input = value;
+                if (!_isUpdating)
+                {
+                    _isUpdating = true;
+                    _textInput = Base64Service.Decode(value);
+                    _isUpdating = false;
+                }
+            }
+        }
+    }
+
+    // Handlers for manual binding if needed, but getters/setters handle the logic
+    private void OnTextChanged(string val) { }
+    private void OnBase64Changed(string val) { }
+}

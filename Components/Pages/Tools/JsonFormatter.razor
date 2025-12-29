@@ -1,0 +1,85 @@
+@page "/tools/json-formatter"
+@inject IFormatterService FormatterService
+@inject ISnackbar Snackbar
+@using Core.Interfaces
+@using Core.Constants
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudBreadcrumbs Items="_breadcrumbs" Class="mb-4"></MudBreadcrumbs>
+    
+    <MudPaper Elevation="4" Class="pa-6">
+        <MudText Typo="Typo.h4" GutterBottom="true">
+            <MudIcon Icon="@Icons.Material.Filled.FormatAlignLeft" Class="mr-2" />
+            JSON/XML Formatter
+        </MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-6">
+             Beautify and validate data structures.
+        </MudText>
+
+        <MudGrid>
+            <MudItem xs="12">
+                <MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined">
+                    <MudButton OnClick="@(() => SetMode("json"))" Variant="@(mode == "json" ? Variant.Filled : Variant.Outlined)">JSON</MudButton>
+                    <MudButton OnClick="@(() => SetMode("xml"))" Variant="@(mode == "xml" ? Variant.Filled : Variant.Outlined)">XML</MudButton>
+                </MudButtonGroup>
+            </MudItem>
+            
+            <MudItem xs="12" md="6">
+                <MudTextField @bind-Value="input" Label="@($"Input {mode.ToUpper()}")" Variant="Variant.Outlined" 
+                             Lines="15" Placeholder="Paste minified content here..." />
+            </MudItem>
+            
+            <MudItem xs="12" md="6">
+                 <MudTextField Value="@output" Label="Formatted Output" Variant="Variant.Outlined" 
+                             Lines="15" ReadOnly="true" Style="font-family: monospace;" />
+            </MudItem>
+
+            <MudItem xs="12">
+                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Format" Size="Size.Large" Class="mr-2">Format</MudButton>
+                 <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="Clear" Size="Size.Large">Clear</MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<BreadcrumbItem> _breadcrumbs = new()
+    {
+        new BreadcrumbItem("Dashboard", href: AppConstants.Routes.Dashboard, icon: Icons.Material.Filled.Dashboard),
+        new BreadcrumbItem("Formatter", href: null, disabled: true, icon: Icons.Material.Filled.FormatAlignLeft)
+    };
+
+    private string mode = "json";
+    private string input = "";
+    private string output = "";
+
+    private void SetMode(string newMode)
+    {
+        mode = newMode;
+        Format();
+    }
+
+    private void Format()
+    {
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            output = "";
+            return;
+        }
+
+        if (mode == "json")
+        {
+            output = FormatterService.FormatJson(input);
+        }
+        else
+        {
+            output = FormatterService.FormatXml(input);
+        }
+    }
+
+    private void Clear()
+    {
+        input = "";
+        output = "";
+    }
+}

@@ -1,0 +1,124 @@
+@page "/tools/ssl-auditor"
+@inject ISslService SslService
+@inject ISnackbar Snackbar
+@using Core.Models
+@using Core.Interfaces
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudBreadcrumbs Items="_breadcrumbs" Class="mb-4"></MudBreadcrumbs>
+    
+    <MudPaper Elevation="4" Class="pa-6">
+        <MudText Typo="Typo.h4" GutterBottom="true">
+            <MudIcon Icon="@Icons.Material.Filled.Lock" Class="mr-2" />
+            SSL/TLS Security Auditor
+        </MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-6">
+            Analyze website certificates and encryption strength.
+        </MudText>
+
+        <MudGrid>
+            <MudItem xs="12" md="8">
+                <MudTextField @bind-Value="domain" Label="Domain / URL" Variant="Variant.Outlined" 
+                             HelperText="e.g. google.com" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Link" />
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AnalyzeSsl" 
+                          Disabled="isLoading" FullWidth="true" Class="mt-2" Size="Size.Large">
+                    @if (isLoading) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+                    else { <MudIcon Icon="@Icons.Material.Filled.Search" Class="mr-2" /> }
+                    Analyze
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+
+        @if (certInfo != null)
+        {
+            <MudDivider Class="my-6" />
+            
+            <MudGrid>
+                <MudItem xs="12" md="6">
+                   <MudCard Elevation="2">
+                       <MudCardHeader>
+                           <CardHeaderAvatar>
+                               <MudIcon Icon="@Icons.Material.Filled.VerifiedUser" 
+                                       Color="@(certInfo.IsValid ? Color.Success : Color.Error)" Size="Size.Large" />
+                           </CardHeaderAvatar>
+                           <CardHeaderContent>
+                               <MudText Typo="Typo.h6">Result: @(certInfo.IsValid ? "Valid" : "Invalid")</MudText>
+                               @if (!certInfo.IsValid)
+                               {
+                                   <MudText Typo="Typo.body2" Color="Color.Error">@certInfo.ValidationErrors</MudText>
+                               }
+                           </CardHeaderContent>
+                       </MudCardHeader>
+                   </MudCard>
+                </MudItem>
+
+                <MudItem xs="12" md="6">
+                    <MudCard Elevation="2">
+                        <MudCardContent>
+                             <MudText><strong>Protocol:</strong> @certInfo.Protocol</MudText>
+                             <MudText><strong>Algorithm:</strong> @certInfo.Algorithm</MudText>
+                             <MudText><strong>Serial:</strong> @certInfo.SerialNumber</MudText>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudList T="string" Dense="true">
+                        <MudListSubheader>Certificate Details</MudListSubheader>
+                        <MudListItem Icon="@Icons.Material.Filled.Subject">
+                            <strong>Subject:</strong> @certInfo.Subject
+                        </MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.Business">
+                             <strong>Issuer:</strong> @certInfo.Issuer
+                        </MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.DateRange">
+                             <strong>Valid From:</strong> @certInfo.NotBefore
+                        </MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.EventBusy">
+                             <strong>Valid Until:</strong> @certInfo.NotAfter
+                        </MudListItem>
+                    </MudList>
+                </MudItem>
+            </MudGrid>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<BreadcrumbItem> _breadcrumbs = new()
+    {
+        new BreadcrumbItem("Dashboard", href: AppConstants.Routes.Dashboard, icon: Icons.Material.Filled.Dashboard),
+        new BreadcrumbItem("SSL Auditor", href: null, disabled: true, icon: Icons.Material.Filled.Lock)
+    };
+
+    private string domain = "";
+    private bool isLoading = false;
+    private SslCertificateInfo? certInfo;
+
+    private async Task AnalyzeSsl()
+    {
+        if (string.IsNullOrWhiteSpace(domain))
+        {
+            Snackbar.Add("Please enter a domain", Severity.Warning);
+            return;
+        }
+
+        isLoading = true;
+        certInfo = null;
+
+        try
+        {
+            certInfo = await SslService.GetCertificateInfoAsync(domain);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

@@ -43,6 +43,9 @@ namespace TestMauiApp
 
             // Add HttpClient for external APIs
             builder.Services.AddHttpClient<IIpLookupService, Application.Services.IpLookupService>();
+            builder.Services.AddHttpClient<ILatencyService, Application.Services.CloudLatencyService>();
+            builder.Services.AddHttpClient<IHeaderAnalyzerService, Application.Services.HeaderAnalyzerService>();
+            builder.Services.AddHttpClient<IMacAddressService, Application.Services.MacAddressService>();
 
             // Register application services
             builder.Services.AddApplicationServices();

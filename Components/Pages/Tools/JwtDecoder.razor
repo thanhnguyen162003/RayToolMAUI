@@ -1,0 +1,86 @@
+@page "/tools/jwt-decoder"
+@inject IJwtService JwtService
+@inject ISnackbar Snackbar
+@using Core.Models
+@using Core.Interfaces
+@using Core.Constants
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudBreadcrumbs Items="_breadcrumbs" Class="mb-4"></MudBreadcrumbs>
+    
+    <MudPaper Elevation="4" Class="pa-6">
+        <MudText Typo="Typo.h4" GutterBottom="true">
+            <MudIcon Icon="@Icons.Material.Filled.VpnKey" Class="mr-2" />
+            JWT Decoder
+        </MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-6">
+             Debug JSON Web Tokens locally and securely (no verification).
+        </MudText>
+
+        <MudTextField @bind-Value="token" Label="Paste JWT Token" Variant="Variant.Outlined" 
+                     Lines="3" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.ContentPaste" 
+                     OnAdornmentClick="DecodeToken" Immediate="true" TextChanged="DecodeToken" />
+
+        @if (tokenInfo != null && !string.IsNullOrEmpty(token))
+        {
+            <MudDivider Class="my-6" />
+            
+            @if (!tokenInfo.IsValid)
+            {
+                <MudAlert Severity="Severity.Error">@tokenInfo.Error</MudAlert>
+            }
+            else
+            {
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudText Typo="Typo.h6" GutterBottom="true" Color="Color.Primary">Header</MudText>
+                        <MudPaper Elevation="0" Class="pa-4 mud-background-gray rounded">
+                            <pre style="white-space: pre-wrap;">@tokenInfo.Header</pre>
+                        </MudPaper>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                         <MudText Typo="Typo.h6" GutterBottom="true" Color="Color.Secondary">Payload</MudText>
+                        <MudPaper Elevation="0" Class="pa-4 mud-background-gray rounded">
+                            <pre style="white-space: pre-wrap;">@tokenInfo.Payload</pre>
+                        </MudPaper>
+                    </MudItem>
+                    <MudItem xs="12">
+                         <MudText Typo="Typo.h6" GutterBottom="true">Decoded Claims</MudText>
+                         <MudTable Items="@tokenInfo.Claims" Dense="true" Hover="true" Striped="true">
+                            <HeaderContent>
+                                <MudTh>Claim</MudTh>
+                                <MudTh>Value</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="Claim">@context.Key</MudTd>
+                                <MudTd DataLabel="Value" Style="word-break: break-all;">@context.Value</MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    </MudItem>
+                </MudGrid>
+            }
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<BreadcrumbItem> _breadcrumbs = new()
+    {
+        new BreadcrumbItem("Dashboard", href: AppConstants.Routes.Dashboard, icon: Icons.Material.Filled.Dashboard),
+        new BreadcrumbItem("JWT Decoder", href: null, disabled: true, icon: Icons.Material.Filled.VpnKey)
+    };
+
+    private string token = "";
+    private JwtTokenInfo? tokenInfo;
+
+    private void DecodeToken()
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            tokenInfo = null;
+            return;
+        }
+
+        tokenInfo = JwtService.Decode(token);
+    }
+}
